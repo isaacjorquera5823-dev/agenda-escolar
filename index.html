@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Escolar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDF1F7;
+    --line: rgba(32,40,56,0.07);
+    --ink:#20242E;
+    --ink-soft:#616B7A;
+    --ink-faint:#9AA3B2;
+    --card:#FFFFFF;
+    --card-border:#E1E7F0;
+    --shadow: 0 2px 10px rgba(31,41,60,0.06);
+
+    --daniel:#2E7355;
+    --daniel-dark:#1F5B41;
+    --daniel-soft:#E4F3EC;
+
+    --benja:#D6497A;
+    --benja-dark:#B23763;
+    --benja-soft:#FBE8F0;
+
+    --s-mate:#3D6FD8;
+    --s-mate-soft:#E7EDFC;
+    --s-leng:#DB5B45;
+    --s-leng-soft:#FBEAE6;
+    --s-cien:#28936A;
+    --s-cien-soft:#E4F5ED;
+    --s-hist:#C1872B;
+    --s-hist-soft:#FAF0DE;
+    --s-ing:#7856C9;
+    --s-ing-soft:#EFE8FA;
+    --s-comp:#C74E86;
+    --s-comp-soft:#FAE7EF;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito Sans', sans-serif;
+    color:var(--ink);
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 34px, var(--line) 34px 35px),
+      var(--bg);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .display{font-family:'Fredoka', sans-serif;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:30;
+    background:rgba(237,241,247,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--card-border);
+    padding:14px 18px 10px;
+  }
+  .spiral{
+    display:flex; gap:7px; justify-content:center; margin-bottom:8px;
+  }
+  .spiral span{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--card); border:2px solid var(--ink-faint);
+  }
+  .title-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    max-width:900px; margin:0 auto;
+  }
+  h1{
+    font-size:20px; margin:0; font-weight:600;
+    display:flex; align-items:center; gap:8px;
+  }
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+
+  .tabs{display:flex; gap:8px; max-width:900px; margin:12px auto 0;}
+  .tab{
+    flex:1; display:flex; align-items:center; gap:10px;
+    border:2px solid transparent; border-radius:16px;
+    padding:9px 14px; cursor:pointer; background:var(--card);
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .tab:hover{transform:translateY(-1px);}
+  .tab.active.daniel{border-color:var(--daniel); background:var(--daniel-soft);}
+  .tab.active.benja{border-color:var(--benja); background:var(--benja-soft);}
+  .tab-emoji{font-size:24px;}
+  .tab-txt{display:flex; flex-direction:column; text-align:left;}
+  .tab-name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px;}
+  .tab-grade{font-size:11.5px; color:var(--ink-soft);}
+  .tab-ring{margin-left:auto;}
+
+  /* ---------- Overview ---------- */
+  .overview{
+    max-width:900px; margin:14px auto 0; padding:0 18px;
+    display:flex; align-items:center; gap:16px; justify-content:space-between; flex-wrap:wrap;
+  }
+  .overview-left{display:flex; align-items:center; gap:16px;}
+  .ring-wrap{position:relative; width:66px; height:66px; flex:none;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px;
+  }
+  .overview-txt{font-size:13px; color:var(--ink-soft); line-height:1.45;}
+  .overview-txt b{color:var(--ink); font-family:'Fredoka',sans-serif; font-weight:600;}
+
+  /* ---------- Week strip ---------- */
+  .weekstrip{
+    display:flex; gap:8px; overflow-x:auto; padding:16px 18px 6px;
+    max-width:900px; margin:0 auto; scroll-behavior:smooth;
+  }
+  .weekstrip::-webkit-scrollbar{height:6px;}
+  .weekstrip::-webkit-scrollbar-thumb{background:var(--card-border); border-radius:4px;}
+  .wchip{
+    flex:none; width:92px; padding:8px 10px; border-radius:12px;
+    background:var(--card); border:2px solid var(--card-border); cursor:pointer;
+    text-align:left;
+  }
+  .wchip.current{border-color:var(--ink-faint);}
+  .wchip .wnum{font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;}
+  .wchip .wdate{font-size:10px; color:var(--ink-soft); margin-top:1px;}
+  .wchip .wbar{height:5px; border-radius:3px; background:var(--line); margin-top:7px; overflow:hidden;}
+  .wchip .wbar i{display:block; height:100%; border-radius:3px;}
+  .vac-divider{
+    flex:none; width:70px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:10.5px; color:var(--ink-soft); text-align:center; line-height:1.3;
+  }
+  .vac-divider .ic{font-size:18px;}
+
+  /* ---------- Week detail ---------- */
+  .weekhead{
+    max-width:900px; margin:10px auto 0; padding:0 18px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .weekhead h2{font-size:17px; margin:0; display:flex; align-items:center; gap:8px;}
+  .navbtns{display:flex; gap:6px;}
+  .navbtn{
+    border:1px solid var(--card-border); background:var(--card); border-radius:10px;
+    width:32px; height:32px; cursor:pointer; font-size:15px; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .navbtn:disabled{opacity:.35; cursor:default;}
+
+  .weekprogress{
+    max-width:900px; margin:8px auto 0; padding:0 18px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .weekprogress .wp-bar{
+    flex:1; height:8px; border-radius:5px; background:var(--line); overflow:hidden;
+  }
+  .weekprogress .wp-bar i{display:block; height:100%; border-radius:5px; transition:width .2s ease;}
+  .weekprogress .wp-label{
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:12.5px; color:var(--ink-soft);
+    white-space:nowrap; flex:none;
+  }
+
+  /* ---------- View toggle (Semana / Asignatura) ---------- */
+  .viewtoggle{
+    max-width:900px; margin:14px auto 0; padding:0 18px;
+    display:flex; gap:8px;
+  }
+  .vtbtn{
+    flex:1; padding:9px 12px; border-radius:12px; border:2px solid var(--card-border);
+    background:var(--card); cursor:pointer; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
+    color:var(--ink-soft); display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .vtbtn.active.daniel{border-color:var(--daniel); color:var(--daniel-dark); background:var(--daniel-soft);}
+  .vtbtn.active.benja{border-color:var(--benja); color:var(--benja-dark); background:var(--benja-soft);}
+
+  .subj-bar{height:6px; border-radius:4px; background:rgba(0,0,0,0.06); margin:0 14px 12px; overflow:hidden;}
+  .subj-bar i{display:block; height:100%; border-radius:4px;}
+
+  .content{max-width:900px; margin:0 auto; padding:10px 18px 0;}
+
+  .subj-card{
+    background:var(--card); border:1px solid var(--card-border); border-radius:16px;
+    margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow);
+  }
+  .subj-head{
+    display:flex; align-items:center; gap:10px; padding:11px 14px;
+    border-left:6px solid transparent;
+  }
+  .subj-dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .subj-name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px; flex:1;}
+  .subj-count{font-size:12px; color:var(--ink-soft);}
+
+  .item{
+    display:flex; align-items:center; gap:12px; padding:12px 14px 12px 16px;
+    border-top:1px solid var(--line);
+    cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;
+    touch-action:manipulation;
+  }
+  .item:hover{background:rgba(0,0,0,0.02);}
+  .item:active{background:rgba(0,0,0,0.05);}
+  .chk{
+    width:26px; height:26px; border-radius:8px; border:2px solid var(--card-border);
+    flex:none; display:flex; align-items:center; justify-content:center;
+    background:#fff; transition:background .12s, border-color .12s;
+    pointer-events:none; /* the whole row handles the tap, avoids double-toggling */
+  }
+  .chk.on{color:#fff;}
+  .chk svg{width:15px; height:15px; display:none;}
+  .chk.on svg{display:block;}
+  .item-txt{flex:1; font-size:13.5px; line-height:1.4; pointer-events:none;}
+  .item.done .item-txt{color:var(--ink-faint); text-decoration:line-through;}
+  .eval-badge{
+    font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px;
+    white-space:nowrap; margin-left:4px; flex:none; pointer-events:none;
+  }
+
+  .empty{
+    text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:14px;
+  }
+
+  /* ---------- Sync button + modal ---------- */
+  .syncbtn{
+    flex:none; display:flex; align-items:center; gap:6px;
+    border:1px solid var(--card-border); background:var(--card); color:var(--ink);
+    border-radius:12px; padding:8px 12px; font-size:12.5px; font-weight:700;
+    cursor:pointer; box-shadow:var(--shadow); font-family:'Nunito Sans',sans-serif;
+  }
+  .syncbtn:hover{background:#F5F7FA;}
+
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(20,24,32,0.45); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal{
+    background:#fff; border-radius:18px; max-width:560px; width:100%;
+    max-height:88vh; overflow-y:auto; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .modal h3{margin:0 0 4px; font-family:'Fredoka',sans-serif; font-size:17px;}
+  .modal p{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:4px 0 12px;}
+  .modal label{font-size:12px; font-weight:700; color:var(--ink-soft); display:block; margin:12px 0 6px;}
+  .modal-childsel{display:flex; gap:8px;}
+  .modal-childsel button{
+    flex:1; padding:8px; border-radius:10px; border:2px solid var(--card-border);
+    background:#fff; cursor:pointer; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
+  }
+  .modal-childsel button.sel.daniel{border-color:var(--daniel); background:var(--daniel-soft);}
+  .modal-childsel button.sel.benja{border-color:var(--benja); background:var(--benja-soft);}
+  .modal textarea{
+    width:100%; min-height:130px; border-radius:10px; border:1.5px solid var(--card-border);
+    padding:10px; font-size:12.5px; font-family:monospace; resize:vertical;
+  }
+  .modal input[type=file]{font-size:12px; margin-top:4px;}
+  .modal-actions{display:flex; gap:8px; margin-top:16px; justify-content:flex-end;}
+  .btn{
+    border:none; border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:'Nunito Sans',sans-serif;
+  }
+  .btn-ghost{background:#F0F2F6; color:var(--ink);}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .sync-results{
+    margin-top:14px; padding:12px; border-radius:12px; background:#F7F9FC; font-size:12.5px; line-height:1.6;
+  }
+  .sync-results .unmatched{max-height:120px; overflow-y:auto; margin-top:6px; color:var(--ink-soft);}
+
+  @media (max-width:520px){
+    .tab-grade{display:none;}
+    .overview{flex-direction:row;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="spiral">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="title-row">
+    <div>
+      <h1>📒 Agenda Escolar · 2º Semestre</h1>
+      <div class="subtitle">Del 20 de julio al 30 de octubre de 2026</div>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div class="overview">
+  <div class="overview-left" id="overview"></div>
+  <button class="syncbtn" id="syncOpenBtn">🔄 Sincronizar avance</button>
+</div>
+
+<div class="weekstrip" id="weekstrip"></div>
+
+<div class="viewtoggle" id="viewtoggle"></div>
+
+<div class="modal-backdrop" id="syncModal" style="display:none;">
+  <div class="modal">
+    <h3>🔄 Sincronizar avance del colegio</h3>
+    <p>Pega o sube lo que exportaste de la plataforma (idealmente con columnas <b>Asignatura, Actividad, Estado</b>). También puedes pegar solo una lista de nombres de lecciones ya completadas, una por línea.</p>
+
+    <label>¿De quién es este avance?</label>
+    <div class="modal-childsel" id="syncChildSel"></div>
+
+    <label>Pegar contenido (CSV o lista)</label>
+    <textarea id="syncTextarea" placeholder="Asignatura,Actividad,Estado
+Matemáticas,1. Unidad 3 ¿Cuándo uso la matemática?,Completado
+Matemáticas,3. Lección 9 Acción de comparar,Completado
+Matemáticas,8. Síntesis y como vas lección 9 y actividades,Pendiente"></textarea>
+
+    <label>...o subir un archivo .csv/.txt</label>
+    <input type="file" id="syncFile" accept=".csv,.txt">
+
+    <div class="sync-results" id="syncResults" style="display:none;"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="syncCancelBtn">Cancelar</button>
+      <button class="btn btn-primary" id="syncRunBtn">Sincronizar</button>
+    </div>
+  </div>
+</div>
+
+<div class="weekhead" id="weekhead">
+  <h2 id="weekTitle"></h2>
+  <div class="navbtns" id="weekNavBtns">
+    <button class="navbtn" id="prevBtn">‹</button>
+    <button class="navbtn" id="nextBtn">›</button>
+  </div>
+</div>
+
+<div class="weekprogress" id="weekprogress">
+  <div class="wp-bar"><i id="wpBarFill"></i></div>
+  <div class="wp-label" id="wpLabel"></div>
+</div>
+
+<div class="content" id="content"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAFKG2sVBgyxsqQ7lEY040ri_XCgYWDfuw",
+  authDomain: "agenda-escolar-daniel-benja.firebaseapp.com",
+  projectId: "agenda-escolar-daniel-benja",
+  storageBucket: "agenda-escolar-daniel-benja.firebasestorage.app",
+  messagingSenderId: "759473360947",
+  appId: "1:759473360947:web:9670a681bc6956f48f9346"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const progressDocRef = doc(db, "progress", "shared-v1");
+const DATA = [{"id":0,"c":"Daniel","g":"6to básico","a":"1. Unidad 3 El arte","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":1,"c":"Daniel","g":"6to básico","a":"2. Lección 7 Construcciones geométricas","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":2,"c":"Daniel","g":"6to básico","a":"3. Lección 7 Estimación y medición de ángulos","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":3,"c":"Daniel","g":"6to básico","a":"4. Lección 7 Construcción de ángulos","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":4,"c":"Daniel","g":"6to básico","a":"5. Lección 7 Construcción de triángulos","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":5,"c":"Daniel","g":"6to básico","a":"6. Lección 7 ¿Cómo vas?","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":6,"c":"Daniel","g":"6to básico","a":"7. Evaluación lección 7","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":true},{"id":7,"c":"Daniel","g":"6to básico","a":"8. Lección 8 Ángulos, paralelas, perpendiculares y oblicuas","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":8,"c":"Daniel","g":"6to básico","a":"9. Lección 8 Ángulos en rectas que se intersecan","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":9,"c":"Daniel","g":"6to básico","a":"10. Lección 8 Ángulos en triángulos y cuadriláteros","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":10,"c":"Daniel","g":"6to básico","a":"11. Lección 8 Cálculo de ángulos","s":"Matemáticas","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":11,"c":"Daniel","g":"6to básico","a":"12. Lección 8 como vas","s":"Matemáticas","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":12,"c":"Daniel","g":"6to básico","a":"13. Lección 8 ¿Cómo vas?","s":"Matemáticas","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":13,"c":"Daniel","g":"6to básico","a":"14. Evaluación ángulos","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":true},{"id":14,"c":"Daniel","g":"6to básico","a":"15. Lección 9 Teselaciones","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":15,"c":"Daniel","g":"6to básico","a":"16. Lección 9 Teselaciones regulares","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":16,"c":"Daniel","g":"6to básico","a":"17. Lección 9 Otras teselaciones","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":17,"c":"Daniel","g":"6to básico","a":"18. Como vas lección 9","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":18,"c":"Daniel","g":"6to básico","a":"19. Evaluación Lección 9","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":true},{"id":19,"c":"Daniel","g":"6to básico","a":"20. Lección 10 Área y volumen","s":"Matemáticas","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":20,"c":"Daniel","g":"6to básico","a":"21. Lección 10 Área de cubos y paralelepípedos","s":"Matemáticas","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":21,"c":"Daniel","g":"6to básico","a":"22. Lección 10 Cálculo del área de cubos y paralelepípedos","s":"Matemáticas","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":22,"c":"Daniel","g":"6to básico","a":"23. Lección 10 Cálculo de volumen de cubos y paralelepípedos","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":23,"c":"Daniel","g":"6to básico","a":"24. Lección 10 Como vas","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":24,"c":"Daniel","g":"6to básico","a":"25. Evaluación lección 10","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":true},{"id":25,"c":"Daniel","g":"6to básico","a":"26. Que aprendí","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":26,"c":"Daniel","g":"6to básico","a":"27. Evaluación unidad 3","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":true},{"id":27,"c":"Daniel","g":"6to básico","a":"28. Unidad 4 La salud","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":28,"c":"Daniel","g":"6to básico","a":"29. Lección 11 Representación de datos","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":29,"c":"Daniel","g":"6to básico","a":"30. Lección 11 Comparación de distribuciones","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":30,"c":"Daniel","g":"6to básico","a":"31. Lección 11 Gráfico de barras dobles","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":31,"c":"Daniel","g":"6to básico","a":"32. Lección 11 Gráfico circular","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":32,"c":"Daniel","g":"6to básico","a":"33. Lección 11 como vas","s":"Matemáticas","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":33,"c":"Daniel","g":"6to básico","a":"34. Evaluación lección 11","s":"Matemáticas","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":true},{"id":34,"c":"Daniel","g":"6to básico","a":"35. Lección 12 Tendencia de resultados","s":"Matemáticas","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":35,"c":"Daniel","g":"6to básico","a":"36. Ejercicios tendencias de resultados","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":36,"c":"Daniel","g":"6to básico","a":"37. Lección 12 Experimentos aleatorios","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":37,"c":"Daniel","g":"6to básico","a":"38. Lección 12 Repetición de experimentos y tendencia","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":38,"c":"Daniel","g":"6to básico","a":"39. Lección 12 como vas","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":39,"c":"Daniel","g":"6to básico","a":"40. Evaluación lección 12","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":true},{"id":40,"c":"Daniel","g":"6to básico","a":"41. Que aprendí","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":41,"c":"Daniel","g":"6to básico","a":"42. Evaluación unidad 4","s":"Matemáticas","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":true},{"id":42,"c":"Daniel","g":"6to básico","a":"43. Mensaje fin de año","s":"Matemáticas","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":43,"c":"Daniel","g":"6to básico","a":"44. Block","s":"Matemáticas","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":44,"c":"Daniel","g":"6to básico","a":"1. Unidad 3 Salud en la adolescencia","s":"Ciencias Naturales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":45,"c":"Daniel","g":"6to básico","a":"2. Lección 5 Desarrollo Humano","s":"Ciencias Naturales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":46,"c":"Daniel","g":"6to básico","a":"3. Lección 5 Órganos reproductores","s":"Ciencias Naturales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":47,"c":"Daniel","g":"6to básico","a":"4. Lección 5 Células sexuales femeninas y masculinas","s":"Ciencias Naturales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":48,"c":"Daniel","g":"6to básico","a":"5. Lección 5 Como voy","s":"Ciencias Naturales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":49,"c":"Daniel","g":"6to básico","a":"6. Evaluación lección 5","s":"Ciencias Naturales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":true},{"id":50,"c":"Daniel","g":"6to básico","a":"7. Lección 6 ¿Cómo cuidar tu salud?","s":"Ciencias Naturales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":51,"c":"Daniel","g":"6to básico","a":"8. Lección 6 Drogas","s":"Ciencias Naturales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":52,"c":"Daniel","g":"6to básico","a":"9. Lección 6 Como voy","s":"Ciencias Naturales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":53,"c":"Daniel","g":"6to básico","a":"10. Evaluación lección 6","s":"Ciencias Naturales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":true},{"id":54,"c":"Daniel","g":"6to básico","a":"11. Repasamos aprendizajes","s":"Ciencias Naturales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":55,"c":"Daniel","g":"6to básico","a":"12. Evaluación unidad 3","s":"Ciencias Naturales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":true},{"id":56,"c":"Daniel","g":"6to básico","a":"13. Unidad 4 La energía del planeta","s":"Ciencias Naturales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":57,"c":"Daniel","g":"6to básico","a":"14. Lección 7 La energía y sus transformaciones","s":"Ciencias Naturales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":58,"c":"Daniel","g":"6to básico","a":"15. Lección 7 De dónde viene la energía","s":"Ciencias Naturales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":59,"c":"Daniel","g":"6to básico","a":"16. Lección 7 Transformaciones de energía","s":"Ciencias Naturales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":60,"c":"Daniel","g":"6to básico","a":"17. Lección 7 Como voy","s":"Ciencias Naturales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":61,"c":"Daniel","g":"6to básico","a":"18. Evaluación lección 7","s":"Ciencias Naturales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":true},{"id":62,"c":"Daniel","g":"6to básico","a":"19. Lección 8 Recursos energéticos","s":"Ciencias Naturales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":63,"c":"Daniel","g":"6to básico","a":"20. Lección 8 Uso responsable de la energía","s":"Ciencias Naturales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":64,"c":"Daniel","g":"6to básico","a":"21. Lección 8 como voy","s":"Ciencias Naturales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":65,"c":"Daniel","g":"6to básico","a":"22. Evaluación lección 8","s":"Ciencias Naturales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":true},{"id":66,"c":"Daniel","g":"6to básico","a":"23. Repasamos aprendizajes","s":"Ciencias Naturales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":67,"c":"Daniel","g":"6to básico","a":"24. Evaluación unidad 4","s":"Ciencias Naturales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":true},{"id":68,"c":"Daniel","g":"6to básico","a":"25. Mensaje fin de año","s":"Ciencias Naturales","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":69,"c":"Daniel","g":"6to básico","a":"1. Unidad 3 Chile en el siglo XX","s":"Historia y Geografía","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":70,"c":"Daniel","g":"6to básico","a":"2. Lección 1 ¿Por qué se habla de la era del salitre?","s":"Historia y Geografía","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":71,"c":"Daniel","g":"6to básico","a":"3. Lección 1 ¿Cómo impactó la riqueza del salitre al país?","s":"Historia y Geografía","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":72,"c":"Daniel","g":"6to básico","a":"4. Evaluación lección 1","s":"Historia y Geografía","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":true},{"id":73,"c":"Daniel","g":"6to básico","a":"5. Lección 6 ¿Cuáles fueron las respuestas a la cuestión social?","s":"Historia y Geografía","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":74,"c":"Daniel","g":"6to básico","a":"6. Como voy","s":"Historia y Geografía","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":75,"c":"Daniel","g":"6to básico","a":"7. Lección 2 ¿Cómo fue el proceso de democratización de la sociedad chilena durante el siglo XX?","s":"Historia y Geografía","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":76,"c":"Daniel","g":"6to básico","a":"8. Lección 2 ¿Cuál fue el nuevo rol social del Estado?","s":"Historia y Geografía","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":77,"c":"Daniel","g":"6to básico","a":"9. Lección 2 ¿Por qué es importante la ampliación de la participación política?","s":"Historia y Geografía","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":78,"c":"Daniel","g":"6to básico","a":"10. Lección 2 La expansión de la educación","s":"Historia y Geografía","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":79,"c":"Daniel","g":"6to básico","a":"11. Lección 2 La cultura juvenil","s":"Historia y Geografía","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":80,"c":"Daniel","g":"6to básico","a":"12. Evaluación lección 2","s":"Historia y Geografía","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":true},{"id":81,"c":"Daniel","g":"6to básico","a":"13. Como voy","s":"Historia y Geografía","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":82,"c":"Daniel","g":"6to básico","a":"14. Evaluación de proceso","s":"Historia y Geografía","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":true},{"id":83,"c":"Daniel","g":"6to básico","a":"15. Lección 3 quiebre y recuperación de la democracia","s":"Historia y Geografía","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":84,"c":"Daniel","g":"6to básico","a":"16. Lección 3 El golpe de estado de 1973","s":"Historia y Geografía","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":85,"c":"Daniel","g":"6to básico","a":"17. Lección 3 Violación a los derechos humanos y exilio","s":"Historia y Geografía","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":86,"c":"Daniel","g":"6to básico","a":"18. Evaluación lección 3","s":"Historia y Geografía","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":true},{"id":87,"c":"Daniel","g":"6to básico","a":"19. Lección 3 ¿Cómo se puso fin a la dictadura?","s":"Historia y Geografía","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":88,"c":"Daniel","g":"6to básico","a":"20. Lección 3 ¿Existe en la actualidad consenso sobre la democracia?","s":"Historia y Geografía","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":89,"c":"Daniel","g":"6to básico","a":"21. Como voy","s":"Historia y Geografía","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":90,"c":"Daniel","g":"6to básico","a":"22. Evaluación Unidad","s":"Historia y Geografía","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":true},{"id":91,"c":"Daniel","g":"6to básico","a":"23. Unidad 4 Geografía de Chile","s":"Historia y Geografía","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":92,"c":"Daniel","g":"6to básico","a":"24. Lección 1 ¿Cómo organizar un territorio tan extenso?","s":"Historia y Geografía","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":93,"c":"Daniel","g":"6to básico","a":"25. Lección 1 Características físicas y humanas de las regiones","s":"Historia y Geografía","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":94,"c":"Daniel","g":"6to básico","a":"26. Lección 1 ¿Por qué hay climas tan diferentes en las regiones?","s":"Historia y Geografía","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":95,"c":"Daniel","g":"6to básico","a":"27. Lección 1 Los habitantes","s":"Historia y Geografía","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":96,"c":"Daniel","g":"6to básico","a":"28. Lección 1 Proyecto: Investigo sobre mi región","s":"Historia y Geografía","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":97,"c":"Daniel","g":"6to básico","a":"29. Como voy","s":"Historia y Geografía","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":98,"c":"Daniel","g":"6to básico","a":"30. Lección 2 Desafíos y oportunidades de los ambientes naturales de Chile 1ª parte","s":"Historia y Geografía","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":99,"c":"Daniel","g":"6to básico","a":"31. Lección 2 Desafíos y oportunidades de los ambientes naturales de Chile 2ª parte","s":"Historia y Geografía","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":100,"c":"Daniel","g":"6to básico","a":"32. Como voy","s":"Historia y Geografía","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":101,"c":"Daniel","g":"6to básico","a":"33. Evaluación lecciones 1 y 2","s":"Historia y Geografía","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":true},{"id":102,"c":"Daniel","g":"6to básico","a":"34. Lección 3 ¿Cómo han influido los desastres naturales en Chile?","s":"Historia y Geografía","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":103,"c":"Daniel","g":"6to básico","a":"35. Otra mirada desde la ecología","s":"Historia y Geografía","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":104,"c":"Daniel","g":"6to básico","a":"36. Lección 3 ¿Cuándo el agua puede convertirse en un problema?","s":"Historia y Geografía","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":105,"c":"Daniel","g":"6to básico","a":"37. Como voy","s":"Historia y Geografía","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":106,"c":"Daniel","g":"6to básico","a":"38. Evaluación lección 3","s":"Historia y Geografía","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":true},{"id":107,"c":"Daniel","g":"6to básico","a":"39. Evaluación unidad 4","s":"Historia y Geografía","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":true},{"id":108,"c":"Daniel","g":"6to básico","a":"40. Mensaje fin de año","s":"Historia y Geografía","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":109,"c":"Daniel","g":"6to básico","a":"41. Block","s":"Historia y Geografía","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":110,"c":"Daniel","g":"6to básico","a":"1. Unidad 3 El ser humano y su vínculo con el cosmos","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":111,"c":"Daniel","g":"6to básico","a":"2. Lección 7 Investigando el universo","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":112,"c":"Daniel","g":"6to básico","a":"3. Lección 7 Cuentos y novelas, ¿son lo mismo?","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":113,"c":"Daniel","g":"6to básico","a":"4. Lectores en acción","s":"Lenguaje y Comunicación","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":114,"c":"Daniel","g":"6to básico","a":"5. ¿Cómo organizar información en organizadores gráficos?","s":"Lenguaje y Comunicación","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":115,"c":"Daniel","g":"6to básico","a":"6. Opiniones sobre las actitudes de los personajes","s":"Lenguaje y Comunicación","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":116,"c":"Daniel","g":"6to básico","a":"7. Mitos y leyendas","s":"Lenguaje y Comunicación","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":117,"c":"Daniel","g":"6to básico","a":"8. Tres textos para leer","s":"Lenguaje y Comunicación","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":118,"c":"Daniel","g":"6to básico","a":"9. Evaluación Lección 7","s":"Lenguaje y Comunicación","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":true},{"id":119,"c":"Daniel","g":"6to básico","a":"10. Lección 8 Distintas creencias sobre el cielo","s":"Lenguaje y Comunicación","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":120,"c":"Daniel","g":"6to básico","a":"11. Lección 8 Infografías","s":"Lenguaje y Comunicación","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":121,"c":"Daniel","g":"6to básico","a":"12. Lectores en acción","s":"Lenguaje y Comunicación","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":122,"c":"Daniel","g":"6to básico","a":"13. Lección 9 Historias de vida","s":"Lenguaje y Comunicación","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":123,"c":"Daniel","g":"6to básico","a":"14. Lectores en acción","s":"Lenguaje y Comunicación","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":124,"c":"Daniel","g":"6to básico","a":"15. Tú escribes","s":"Lenguaje y Comunicación","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":125,"c":"Daniel","g":"6to básico","a":"16. Evaluación unidad 3","s":"Lenguaje y Comunicación","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":true},{"id":126,"c":"Daniel","g":"6to básico","a":"17. Unidad 4 ¿Cómo conocemos el mundo?","s":"Lenguaje y Comunicación","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":127,"c":"Daniel","g":"6to básico","a":"18. Comenzando con ¿Qué observó Darwin en sus viajes?","s":"Lenguaje y Comunicación","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":128,"c":"Daniel","g":"6to básico","a":"19. Subunidad 1 Registros históricos","s":"Lenguaje y Comunicación","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":129,"c":"Daniel","g":"6to básico","a":"20. Cuatro textos para revisar","s":"Lenguaje y Comunicación","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":130,"c":"Daniel","g":"6to básico","a":"21. Después de la lectura - Los relatos históricos","s":"Lenguaje y Comunicación","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":131,"c":"Daniel","g":"6to básico","a":"22. Proyecto lectura y escritura","s":"Lenguaje y Comunicación","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":132,"c":"Daniel","g":"6to básico","a":"23. Evaluación de proceso 1","s":"Lenguaje y Comunicación","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":true},{"id":133,"c":"Daniel","g":"6to básico","a":"24. Subunidad 2 Viajeras por el mundo - Biografías","s":"Lenguaje y Comunicación","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":134,"c":"Daniel","g":"6to básico","a":"25. Después de la lectura - Biografías","s":"Lenguaje y Comunicación","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":135,"c":"Daniel","g":"6to básico","a":"26. Evaluación de proceso 2","s":"Lenguaje y Comunicación","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":true},{"id":136,"c":"Daniel","g":"6to básico","a":"27. Subunidad 3 Acciones que dejan huellas - reportajes","s":"Lenguaje y Comunicación","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":137,"c":"Daniel","g":"6to básico","a":"28. Dos textos a revisar","s":"Lenguaje y Comunicación","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":138,"c":"Daniel","g":"6to básico","a":"29. Después de la lectura - reportajes","s":"Lenguaje y Comunicación","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":139,"c":"Daniel","g":"6to básico","a":"30. Evaluación de proceso 3","s":"Lenguaje y Comunicación","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":true},{"id":140,"c":"Daniel","g":"6to básico","a":"31. Proyecto tú escribes","s":"Lenguaje y Comunicación","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":141,"c":"Daniel","g":"6to básico","a":"32. Evaluación de unidad 4","s":"Lenguaje y Comunicación","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":true},{"id":142,"c":"Daniel","g":"6to básico","a":"33. Mensaje fin de año","s":"Lenguaje y Comunicación","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":143,"c":"Daniel","g":"6to básico","a":"1. Changing Habits Unit 3","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":144,"c":"Daniel","g":"6to básico","a":"2. Topic 1 Think Green","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":145,"c":"Daniel","g":"6to básico","a":"3. Topic 1 production","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":146,"c":"Daniel","g":"6to básico","a":"4. Topic 1 Look up!","s":"Inglés","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":147,"c":"Daniel","g":"6to básico","a":"5. Assessment Topic 1 Unit 3","s":"Inglés","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":true},{"id":148,"c":"Daniel","g":"6to básico","a":"6. Topic 1 Reading Section","s":"Inglés","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":149,"c":"Daniel","g":"6to básico","a":"7. Topic 1 CLIL Maths","s":"Inglés","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":150,"c":"Daniel","g":"6to básico","a":"8. Final Assessment topic 1","s":"Inglés","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":true},{"id":151,"c":"Daniel","g":"6to básico","a":"9. Topic 2 Keep Healthy!","s":"Inglés","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":152,"c":"Daniel","g":"6to básico","a":"10. Topic 2 Production","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":153,"c":"Daniel","g":"6to básico","a":"11. Topic 2 Say the sport+","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":154,"c":"Daniel","g":"6to básico","a":"12. Assessment Topic 2 Unit 3","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":true},{"id":155,"c":"Daniel","g":"6to básico","a":"13. Topic 2 Reading Section","s":"Inglés","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":156,"c":"Daniel","g":"6to básico","a":"14. CLIL Sports","s":"Inglés","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":157,"c":"Daniel","g":"6to básico","a":"15. Final Assessment Topic 2 Unit 3","s":"Inglés","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":true},{"id":158,"c":"Daniel","g":"6to básico","a":"16. Amazing Lives Unit 4","s":"Inglés","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":159,"c":"Daniel","g":"6to básico","a":"17. Topic 1 Making History!","s":"Inglés","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":160,"c":"Daniel","g":"6to básico","a":"18. Topic 1 Production","s":"Inglés","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":161,"c":"Daniel","g":"6to básico","a":"19. Topic 1 Look them up!","s":"Inglés","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":162,"c":"Daniel","g":"6to básico","a":"20. Assessment topic 1 Unit 4","s":"Inglés","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":true},{"id":163,"c":"Daniel","g":"6to básico","a":"21. Topic 1 Reading Section","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":164,"c":"Daniel","g":"6to básico","a":"22. CLIL Art","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":165,"c":"Daniel","g":"6to básico","a":"23. Final Assessment Topic 1 Unit 4","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":true},{"id":166,"c":"Daniel","g":"6to básico","a":"24. Topic 2 Animal Experts!","s":"Inglés","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":167,"c":"Daniel","g":"6to básico","a":"25. Topic 2 Production","s":"Inglés","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":168,"c":"Daniel","g":"6to básico","a":"26. Topic 2 Look them up!","s":"Inglés","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":169,"c":"Daniel","g":"6to básico","a":"27. Assessment Topic 2 Unit 4","s":"Inglés","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":true},{"id":170,"c":"Daniel","g":"6to básico","a":"28. Topic 2 Reading Section","s":"Inglés","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":171,"c":"Daniel","g":"6to básico","a":"29. CLIL Science","s":"Inglés","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":172,"c":"Daniel","g":"6to básico","a":"30. Final Assessment Topic 2 Unit 4","s":"Inglés","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":true},{"id":173,"c":"Daniel","g":"6to básico","a":"31. Mensaje fin de año","s":"Inglés","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":174,"c":"Benja","g":"2do básico","a":"15. Comprensión lectora \"La fiesta de Sixto\"","s":"Comprensión Lectora y Caligrafía","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":175,"c":"Benja","g":"2do básico","a":"16. Comprensión lectora \"La llave\"","s":"Comprensión Lectora y Caligrafía","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":176,"c":"Benja","g":"2do básico","a":"17. Comprensión lectora \"La tortuga Miguelita\"","s":"Comprensión Lectora y Caligrafía","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":177,"c":"Benja","g":"2do básico","a":"18. Comprensión lectora \"Las casas\"","s":"Comprensión Lectora y Caligrafía","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":178,"c":"Benja","g":"2do básico","a":"19. Comprensión lectora \"Lolo\"","s":"Comprensión Lectora y Caligrafía","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":179,"c":"Benja","g":"2do básico","a":"20. Comprensión lectora \"La vaca\"","s":"Comprensión Lectora y Caligrafía","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":180,"c":"Benja","g":"2do básico","a":"21. Comprensión lectora \"El caballo\"","s":"Comprensión Lectora y Caligrafía","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":181,"c":"Benja","g":"2do básico","a":"22. Comprensión lectora \"La gallina\"","s":"Comprensión Lectora y Caligrafía","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":182,"c":"Benja","g":"2do básico","a":"23. Comprensión lectora \"El cerdo\"","s":"Comprensión Lectora y Caligrafía","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":183,"c":"Benja","g":"2do básico","a":"24. Comprensión lectora \"La oveja\"","s":"Comprensión Lectora y Caligrafía","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":184,"c":"Benja","g":"2do básico","a":"26. Comprensión lectora \"El gato\"","s":"Comprensión Lectora y Caligrafía","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":185,"c":"Benja","g":"2do básico","a":"28. Comprensión lectora \"El conejo\"","s":"Comprensión Lectora y Caligrafía","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":186,"c":"Benja","g":"2do básico","a":"29. Siguiente Lección","s":"Comprensión Lectora y Caligrafía","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":187,"c":"Benja","g":"2do básico","a":"1. Unidad 3 ¿Cuándo uso la matemática?","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":188,"c":"Benja","g":"2do básico","a":"3. Lección 9 Acción de comparar","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":189,"c":"Benja","g":"2do básico","a":"4. Lección 9 Relación entre la suma y la resta (Familia operaciones)","s":"Matemáticas","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":190,"c":"Benja","g":"2do básico","a":"5. Lección 9 Sumas y restas hasta 100","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":191,"c":"Benja","g":"2do básico","a":"6. Lección 9 Problemas","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":192,"c":"Benja","g":"2do básico","a":"7. Lección 9 Creación de problemas","s":"Matemáticas","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":193,"c":"Benja","g":"2do básico","a":"8. Síntesis y como vas lección 9 y actividades","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":194,"c":"Benja","g":"2do básico","a":"9. Lección 10 medición de longitud","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":195,"c":"Benja","g":"2do básico","a":"10. Lección 10 Medidas estandarizadas","s":"Matemáticas","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":196,"c":"Benja","g":"2do básico","a":"11. Sintesis y como vas lección 10","s":"Matemáticas","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":197,"c":"Benja","g":"2do básico","a":"12. Evaluación lección 10","s":"Matemáticas","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":198,"c":"Benja","g":"2do básico","a":"13. Lección 11 Figuras 2D y 3D","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":199,"c":"Benja","g":"2do básico","a":"14. Lección 11 Figuras 3D","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":200,"c":"Benja","g":"2do básico","a":"15. Síntesis y como vas lección 11","s":"Matemáticas","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":201,"c":"Benja","g":"2do básico","a":"16. Evaluación lección 11-12","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":202,"c":"Benja","g":"2do básico","a":"17. Que aprendiste","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":203,"c":"Benja","g":"2do básico","a":"18. Evaluación unidad 3","s":"Matemáticas","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":204,"c":"Benja","g":"2do básico","a":"19. Unidad 4 ¿Dónde más uso matemática?","s":"Matemáticas","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":205,"c":"Benja","g":"2do básico","a":"21. Lección 13 Multiplicación","s":"Matemáticas","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":206,"c":"Benja","g":"2do básico","a":"22. Lección 13 Tablas de multiplicar","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":207,"c":"Benja","g":"2do básico","a":"23. Lección 13 Problemas de multiplicación","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":208,"c":"Benja","g":"2do básico","a":"24. Síntesis y como vas lección 13 act complementarias","s":"Matemáticas","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":209,"c":"Benja","g":"2do básico","a":"25. Lección 14 Patrones numéricos","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":210,"c":"Benja","g":"2do básico","a":"26. Síntesis y como voy lección 14","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":211,"c":"Benja","g":"2do básico","a":"27. Evaluación lección 13-14","s":"Matemáticas","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":212,"c":"Benja","g":"2do básico","a":"28. Lección 15 Tablas y gráficos","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":213,"c":"Benja","g":"2do básico","a":"29. Lección 15 Tablas de conteo","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":214,"c":"Benja","g":"2do básico","a":"30. Lección 15 Pictogramas con escala","s":"Matemáticas","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":215,"c":"Benja","g":"2do básico","a":"31. Lección 15 Gráficos de barras simples","s":"Matemáticas","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":216,"c":"Benja","g":"2do básico","a":"32. Síntesis y como voy lección 15 act complementarias","s":"Matemáticas","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":217,"c":"Benja","g":"2do básico","a":"33. Lección 16 Juegos aleatorios","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":218,"c":"Benja","g":"2do básico","a":"34. Síntesis  y como voy lección 16","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":219,"c":"Benja","g":"2do básico","a":"35. Evaluación lecciones 15-16","s":"Matemáticas","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":220,"c":"Benja","g":"2do básico","a":"36. Estimación","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":221,"c":"Benja","g":"2do básico","a":"37. Que aprendiste unidad 4","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":222,"c":"Benja","g":"2do básico","a":"38. Evaluación unidad 4","s":"Matemáticas","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":223,"c":"Benja","g":"2do básico","a":"39. Mensaje fin de año","s":"Matemáticas","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":224,"c":"Benja","g":"2do básico","a":"40. Block","s":"Matemáticas","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":225,"c":"Benja","g":"2do básico","a":"1. Unidad 3 Protejamos el hogar de los animales","s":"Ciencias Naturales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":226,"c":"Benja","g":"2do básico","a":"2. Lección 5 El hogar de los animales","s":"Ciencias Naturales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":227,"c":"Benja","g":"2do básico","a":"3. Lección 5 Todos los lugares son iguales","s":"Ciencias Naturales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":228,"c":"Benja","g":"2do básico","a":"4. Lección 5 Cada animal en su lugar","s":"Ciencias Naturales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":229,"c":"Benja","g":"2do básico","a":"5. Lección 5 Animales en peligro","s":"Ciencias Naturales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":230,"c":"Benja","g":"2do básico","a":"6. Lección 5 Acciones que dañan","s":"Ciencias Naturales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":231,"c":"Benja","g":"2do básico","a":"7. Lección 5 Proteger el hogar de los animales","s":"Ciencias Naturales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":232,"c":"Benja","g":"2do básico","a":"8. Evaluación formativa lección 5","s":"Ciencias Naturales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":233,"c":"Benja","g":"2do básico","a":"9. Lección 6 ciclo de vida","s":"Ciencias Naturales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":234,"c":"Benja","g":"2do básico","a":"10. Lección 6  Mariposa","s":"Ciencias Naturales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":235,"c":"Benja","g":"2do básico","a":"11. Lección 6 Sapo","s":"Ciencias Naturales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":236,"c":"Benja","g":"2do básico","a":"12. Lección 6 Gallina","s":"Ciencias Naturales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":237,"c":"Benja","g":"2do básico","a":"13. Evaluación sumativa  lección 6","s":"Ciencias Naturales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":238,"c":"Benja","g":"2do básico","a":"14. Que aprendí Unidad 3","s":"Ciencias Naturales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":239,"c":"Benja","g":"2do básico","a":"15. Evaluación unidad 3","s":"Ciencias Naturales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":240,"c":"Benja","g":"2do básico","a":"16. Unidad 4 El agua","s":"Ciencias Naturales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":241,"c":"Benja","g":"2do básico","a":"17. Lección 7 La forma del agua","s":"Ciencias Naturales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":242,"c":"Benja","g":"2do básico","a":"18. Lección 7 Propiedades del agua","s":"Ciencias Naturales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":243,"c":"Benja","g":"2do básico","a":"19. Lección 7 Sustancias que se disuelven","s":"Ciencias Naturales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":244,"c":"Benja","g":"2do básico","a":"20. Evaluación formativa lección 7","s":"Ciencias Naturales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":245,"c":"Benja","g":"2do básico","a":"21. Lección 8 Dónde hay agua","s":"Ciencias Naturales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":246,"c":"Benja","g":"2do básico","a":"22. Lección  8 El ciclo del agua","s":"Ciencias Naturales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":247,"c":"Benja","g":"2do básico","a":"23. Lección 8 Cuidar el agua","s":"Ciencias Naturales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":248,"c":"Benja","g":"2do básico","a":"24. Evaluación sumativa lección 8","s":"Ciencias Naturales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":249,"c":"Benja","g":"2do básico","a":"25. Que aprendí Unidad 4","s":"Ciencias Naturales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":250,"c":"Benja","g":"2do básico","a":"26. Evaluación Unidad","s":"Ciencias Naturales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":251,"c":"Benja","g":"2do básico","a":"27. Mensaje fin de año","s":"Ciencias Naturales","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":252,"c":"Benja","g":"2do básico","a":"28. Block","s":"Ciencias Naturales","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":253,"c":"Benja","g":"2do básico","a":"1. Unidad 3 Chile diverso","s":"Historia, Geografía y Ciencias Sociales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":254,"c":"Benja","g":"2do básico","a":"2. Lección 1 Herencia del pasado","s":"Historia, Geografía y Ciencias Sociales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":255,"c":"Benja","g":"2do básico","a":"3. Lección 1 LLegada de los Españoles","s":"Historia, Geografía y Ciencias Sociales","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":256,"c":"Benja","g":"2do básico","a":"4. Lección 1 Aporte de los Españoles","s":"Historia, Geografía y Ciencias Sociales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":257,"c":"Benja","g":"2do básico","a":"5. Lección 1 Mestizos","s":"Historia, Geografía y Ciencias Sociales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":258,"c":"Benja","g":"2do básico","a":"6. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":259,"c":"Benja","g":"2do básico","a":"7. Lección 2 El aporte de los inmigrantes a Chile","s":"Historia, Geografía y Ciencias Sociales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":260,"c":"Benja","g":"2do básico","a":"8. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":261,"c":"Benja","g":"2do básico","a":"9. Evaluación lección","s":"Historia, Geografía y Ciencias Sociales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":262,"c":"Benja","g":"2do básico","a":"10. Lección 3 ¿Cómo convivir en una sociedad diversa?","s":"Historia, Geografía y Ciencias Sociales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":263,"c":"Benja","g":"2do básico","a":"11. Evaluación proceso","s":"Historia, Geografía y Ciencias Sociales","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":264,"c":"Benja","g":"2do básico","a":"12. Lección 3 Inmigrantes en la actualidad","s":"Historia, Geografía y Ciencias Sociales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":265,"c":"Benja","g":"2do básico","a":"13. Lección 3 Recepción e integración","s":"Historia, Geografía y Ciencias Sociales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":266,"c":"Benja","g":"2do básico","a":"14. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":267,"c":"Benja","g":"2do básico","a":"16. Síntesis y repaso","s":"Historia, Geografía y Ciencias Sociales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":268,"c":"Benja","g":"2do básico","a":"17. Evaluación unidad 3","s":"Historia, Geografía y Ciencias Sociales","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":269,"c":"Benja","g":"2do básico","a":"18. Unidad 4 conservar el pasado","s":"Historia, Geografía y Ciencias Sociales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":270,"c":"Benja","g":"2do básico","a":"19. Lección 1 Patrimonio","s":"Historia, Geografía y Ciencias Sociales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":271,"c":"Benja","g":"2do básico","a":"20. Lección 1 Qué se transmite","s":"Historia, Geografía y Ciencias Sociales","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":272,"c":"Benja","g":"2do básico","a":"21. Lección 1 Patrimonio","s":"Historia, Geografía y Ciencias Sociales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":273,"c":"Benja","g":"2do básico","a":"22. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":274,"c":"Benja","g":"2do básico","a":"23. Evaluación lección 1","s":"Historia, Geografía y Ciencias Sociales","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":275,"c":"Benja","g":"2do básico","a":"24. Lección 2 Patrimonio natural","s":"Historia, Geografía y Ciencias Sociales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":276,"c":"Benja","g":"2do básico","a":"25. Lección 2 Santuarios","s":"Historia, Geografía y Ciencias Sociales","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":277,"c":"Benja","g":"2do básico","a":"26. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":278,"c":"Benja","g":"2do básico","a":"27. Evaluación lección 2","s":"Historia, Geografía y Ciencias Sociales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":279,"c":"Benja","g":"2do básico","a":"28. Lección 3 Que es el patrimonio","s":"Historia, Geografía y Ciencias Sociales","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":280,"c":"Benja","g":"2do básico","a":"29. Lección 3 Protección de patrimonio","s":"Historia, Geografía y Ciencias Sociales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":281,"c":"Benja","g":"2do básico","a":"30. Lección 3 Patrimonio y cuidados","s":"Historia, Geografía y Ciencias Sociales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":282,"c":"Benja","g":"2do básico","a":"31. Lección 3 Normas y medio ambiente","s":"Historia, Geografía y Ciencias Sociales","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":283,"c":"Benja","g":"2do básico","a":"32. Evaluación lección 3","s":"Historia, Geografía y Ciencias Sociales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":284,"c":"Benja","g":"2do básico","a":"33. Como voy","s":"Historia, Geografía y Ciencias Sociales","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":285,"c":"Benja","g":"2do básico","a":"34. Evaluación sumativa","s":"Historia, Geografía y Ciencias Sociales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":286,"c":"Benja","g":"2do básico","a":"35. Síntesis y repaso","s":"Historia, Geografía y Ciencias Sociales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":287,"c":"Benja","g":"2do básico","a":"36. Evaluación unidad 4","s":"Historia, Geografía y Ciencias Sociales","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":288,"c":"Benja","g":"2do básico","a":"37. Mensaje fin de año","s":"Historia, Geografía y Ciencias Sociales","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":289,"c":"Benja","g":"2do básico","a":"38. Block","s":"Historia, Geografía y Ciencias Sociales","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":290,"c":"Benja","g":"2do básico","a":"1. Unidad 3 Como nos relacionamos con los demás","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":291,"c":"Benja","g":"2do básico","a":"3. Solidaridad y amistad cívica","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":292,"c":"Benja","g":"2do básico","a":"4. Acciones de los personajes","s":"Lenguaje y Comunicación","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":293,"c":"Benja","g":"2do básico","a":"5. Comprender un cuento","s":"Lenguaje y Comunicación","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":294,"c":"Benja","g":"2do básico","a":"6. Evaluación de proceso","s":"Lenguaje y Comunicación","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":295,"c":"Benja","g":"2do básico","a":"7. Escucha e imagina","s":"Lenguaje y Comunicación","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":296,"c":"Benja","g":"2do básico","a":"8. Desafío de escritura","s":"Lenguaje y Comunicación","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":297,"c":"Benja","g":"2do básico","a":"9. Evaluación sumativa","s":"Lenguaje y Comunicación","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":298,"c":"Benja","g":"2do básico","a":"10. Lección 2 Otras formas de comunicarnos (poemas)","s":"Lenguaje y Comunicación","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":299,"c":"Benja","g":"2do básico","a":"11. Explicar versos","s":"Lenguaje y Comunicación","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":300,"c":"Benja","g":"2do básico","a":"12. Tina y Tino","s":"Lenguaje y Comunicación","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":301,"c":"Benja","g":"2do básico","a":"13. Dentista","s":"Lenguaje y Comunicación","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":302,"c":"Benja","g":"2do básico","a":"14. La familia polilla","s":"Lenguaje y Comunicación","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":303,"c":"Benja","g":"2do básico","a":"15. Evaluación unidad 3","s":"Lenguaje y Comunicación","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":304,"c":"Benja","g":"2do básico","a":"16. Unidad 4 Curiosidad","s":"Lenguaje y Comunicación","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":305,"c":"Benja","g":"2do básico","a":"17. La curiosidad nos mueve (texto informativo)","s":"Lenguaje y Comunicación","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":306,"c":"Benja","g":"2do básico","a":"18. El conejo en la Luna","s":"Lenguaje y Comunicación","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":307,"c":"Benja","g":"2do básico","a":"19. Palabras de Sankhambi","s":"Lenguaje y Comunicación","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":308,"c":"Benja","g":"2do básico","a":"20. Cómo los monos salvaron a la luna","s":"Lenguaje y Comunicación","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":309,"c":"Benja","g":"2do básico","a":"21. Evaluación proceso","s":"Lenguaje y Comunicación","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":310,"c":"Benja","g":"2do básico","a":"22. Cuento Inestable, el caracol.","s":"Lenguaje y Comunicación","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":311,"c":"Benja","g":"2do básico","a":"23. Desafío de escritura-articulo, sustantivo-adjetivo","s":"Lenguaje y Comunicación","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":312,"c":"Benja","g":"2do básico","a":"24. Evaluación  Caperucita Roja","s":"Lenguaje y Comunicación","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":313,"c":"Benja","g":"2do básico","a":"25. Acróstico y Caligrama","s":"Lenguaje y Comunicación","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":314,"c":"Benja","g":"2do básico","a":"26. Evaluación Acrostico y caligrama","s":"Lenguaje y Comunicación","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":315,"c":"Benja","g":"2do básico","a":"27. Cuento, poema o canción","s":"Lenguaje y Comunicación","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":316,"c":"Benja","g":"2do básico","a":"28. Lectura-pausa-comprensión","s":"Lenguaje y Comunicación","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":317,"c":"Benja","g":"2do básico","a":"29. Evaluación Unidad 4","s":"Lenguaje y Comunicación","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":318,"c":"Benja","g":"2do básico","a":"30. Mensaje fin de año","s":"Lenguaje y Comunicación","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":319,"c":"Benja","g":"2do básico","a":"31. Block","s":"Lenguaje y Comunicación","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":320,"c":"Benja","g":"2do básico","a":"1. Jobs Unit 5","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":321,"c":"Benja","g":"2do básico","a":"2. First Assessment Unit 5","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":322,"c":"Benja","g":"2do básico","a":"3. Practice Unit 5","s":"Inglés","w":31,"f1":"2026-07-20","f2":"2026-07-24","e":false},{"id":323,"c":"Benja","g":"2do básico","a":"4. Production Unit 5","s":"Inglés","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":324,"c":"Benja","g":"2do básico","a":"5. Assessment 2 Unit 5","s":"Inglés","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":325,"c":"Benja","g":"2do básico","a":"6. The firefighters! Unit 5","s":"Inglés","w":32,"f1":"2026-07-27","f2":"2026-07-31","e":false},{"id":326,"c":"Benja","g":"2do básico","a":"7. Beep's world Unit 5","s":"Inglés","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":327,"c":"Benja","g":"2do básico","a":"8. CLIL- Social Studies Unit 5","s":"Inglés","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":328,"c":"Benja","g":"2do básico","a":"9. Sounds Unit 5","s":"Inglés","w":33,"f1":"2026-08-03","f2":"2026-08-07","e":false},{"id":329,"c":"Benja","g":"2do básico","a":"10. Final Assessment Unit 5","s":"Inglés","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":330,"c":"Benja","g":"2do básico","a":"11. My free time Unit 6","s":"Inglés","w":34,"f1":"2026-08-10","f2":"2026-08-14","e":false},{"id":331,"c":"Benja","g":"2do básico","a":"12. First Assessment Unit 6","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":332,"c":"Benja","g":"2do básico","a":"13. Practice Unit 6","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":333,"c":"Benja","g":"2do básico","a":"14. Production Unit 6","s":"Inglés","w":35,"f1":"2026-08-17","f2":"2026-08-21","e":false},{"id":334,"c":"Benja","g":"2do básico","a":"15. Assessment 2 Unit 6","s":"Inglés","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":335,"c":"Benja","g":"2do básico","a":"16. The cake competition unit 6","s":"Inglés","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":336,"c":"Benja","g":"2do básico","a":"17. CLIL PE","s":"Inglés","w":36,"f1":"2026-08-24","f2":"2026-08-28","e":false},{"id":337,"c":"Benja","g":"2do básico","a":"18. Final Assessment Unit 6","s":"Inglés","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":338,"c":"Benja","g":"2do básico","a":"19. The garden Unit 7","s":"Inglés","w":37,"f1":"2026-08-31","f2":"2026-09-04","e":false},{"id":339,"c":"Benja","g":"2do básico","a":"20. First Assessment Unit 7","s":"Inglés","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":340,"c":"Benja","g":"2do básico","a":"21. Practice Unit 7","s":"Inglés","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":341,"c":"Benja","g":"2do básico","a":"22. Production Unit 7","s":"Inglés","w":38,"f1":"2026-09-07","f2":"2026-09-11","e":false},{"id":342,"c":"Benja","g":"2do básico","a":"23. Let´s Play! Unit 7","s":"Inglés","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":343,"c":"Benja","g":"2do básico","a":"24. Assessment 2 Unit 7","s":"Inglés","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":344,"c":"Benja","g":"2do básico","a":"25. The enormous pumpkin Unit 7","s":"Inglés","w":40,"f1":"2026-09-21","f2":"2026-09-25","e":false},{"id":345,"c":"Benja","g":"2do básico","a":"26. Beep's world Unit 7","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":346,"c":"Benja","g":"2do básico","a":"27. CLIL MATH Unit 7","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":347,"c":"Benja","g":"2do básico","a":"28. Final Assessment Unit 7","s":"Inglés","w":41,"f1":"2026-09-28","f2":"2026-10-02","e":false},{"id":348,"c":"Benja","g":"2do básico","a":"29. The school show Unit 8","s":"Inglés","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":349,"c":"Benja","g":"2do básico","a":"30. First Assessment Unit 8","s":"Inglés","w":42,"f1":"2026-10-05","f2":"2026-10-09","e":false},{"id":350,"c":"Benja","g":"2do básico","a":"31. Practice Unit 8","s":"Inglés","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":351,"c":"Benja","g":"2do básico","a":"32. Production Unit 8","s":"Inglés","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":352,"c":"Benja","g":"2do básico","a":"33. Let´s Play Unit 8","s":"Inglés","w":43,"f1":"2026-10-12","f2":"2026-10-16","e":false},{"id":353,"c":"Benja","g":"2do básico","a":"34. Assessment 2 Unit 8","s":"Inglés","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":354,"c":"Benja","g":"2do básico","a":"35. The magic trick! unit 8","s":"Inglés","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":355,"c":"Benja","g":"2do básico","a":"36. Beep's world Unit 8","s":"Inglés","w":44,"f1":"2026-10-19","f2":"2026-10-23","e":false},{"id":356,"c":"Benja","g":"2do básico","a":"37. Final Assessment Unit 8","s":"Inglés","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false},{"id":357,"c":"Benja","g":"2do básico","a":"38. Mensaje fin de año","s":"Inglés","w":45,"f1":"2026-10-26","f2":"2026-10-30","e":false}];
+
+const SUBJECT_STYLE = {
+  'Matemáticas': {c:'var(--s-mate)', soft:'var(--s-mate-soft)'},
+  'Lenguaje y Comunicación': {c:'var(--s-leng)', soft:'var(--s-leng-soft)'},
+  'Ciencias Naturales': {c:'var(--s-cien)', soft:'var(--s-cien-soft)'},
+  'Historia y Geografía': {c:'var(--s-hist)', soft:'var(--s-hist-soft)'},
+  'Historia, Geografía y Ciencias Sociales': {c:'var(--s-hist)', soft:'var(--s-hist-soft)'},
+  'Inglés': {c:'var(--s-ing)', soft:'var(--s-ing-soft)'},
+  'Comprensión Lectora y Caligrafía': {c:'var(--s-comp)', soft:'var(--s-comp-soft)'}
+};
+function subjStyle(s){ return SUBJECT_STYLE[s] || {c:'var(--ink-faint)', soft:'#f2f2f2'}; }
+
+const WEEKS = [...new Set(DATA.map(d=>d.w))].sort((a,b)=>a-b);
+const CHILDREN = [
+  {key:'Daniel', emoji:'⚽', color:'daniel', varc:'var(--daniel)'},
+  {key:'Benja', emoji:'🐼', color:'benja', varc:'var(--benja)'}
+];
+
+const TODAY = new Date('2026-07-21');
+
+let state = { child: 'Daniel', week: null, checked: new Set(), view: 'week' };
+
+function fmtRange(f1,f2){
+  const o={day:'2-digit', month:'short'};
+  const a=new Date(f1+'T00:00:00').toLocaleDateString('es-CL',o);
+  const b=new Date(f2+'T00:00:00').toLocaleDateString('es-CL',o);
+  return a+' – '+b;
+}
+
+async function loadProgress(){
+  try{
+    const snap = await getDoc(progressDocRef);
+    if(snap.exists()){
+      const data = snap.data();
+      state.checked = new Set(data.checked || []);
+    }
+  }catch(e){ console.error('No se pudo cargar el progreso', e); }
+}
+let saveTimer=null;
+function saveProgress(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await setDoc(progressDocRef, { checked: [...state.checked], updatedAt: Date.now() });
+    }catch(e){ console.error('No se pudo guardar el progreso', e); }
+  }, 250);
+}
+
+// Sincronización en tiempo real: si el otro dispositivo marca algo, se refleja aquí solo.
+onSnapshot(progressDocRef, (snap)=>{
+  if(!snap.exists()) return;
+  const data = snap.data();
+  const incoming = new Set(data.checked || []);
+  const same = incoming.size===state.checked.size && [...incoming].every(id=>state.checked.has(id));
+  if(!same){
+    state.checked = incoming;
+    renderAll();
+  }
+});
+
+function childItems(childKey){ return DATA.filter(d=>d.c===childKey); }
+function weekItems(childKey, week){ return DATA.filter(d=>d.c===childKey && d.w===week); }
+
+function pct(done,total){ return total? Math.round(done*100/total) : 0; }
+
+function ring(size, strokeW, percent, color){
+  const r=(size-strokeW)/2, c=2*Math.PI*r;
+  const off = c - (percent/100)*c;
+  return `<svg width="${size}" height="${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="var(--line)" stroke-width="${strokeW}" fill="none"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="${color}" stroke-width="${strokeW}" fill="none"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = CHILDREN.map(ch=>{
+    const items = childItems(ch.key);
+    const done = items.filter(i=>state.checked.has(i.id)).length;
+    const p = pct(done, items.length);
+    const active = state.child===ch.key ? 'active '+ch.color : '';
+    return `<div class="tab ${active}" data-child="${ch.key}">
+      <div class="tab-emoji">${ch.emoji}</div>
+      <div class="tab-txt">
+        <div class="tab-name">${ch.key}</div>
+        <div class="tab-grade">${items[0]?items[0].g:''}</div>
+      </div>
+      <div class="tab-ring">${ring(38,5,p,ch.varc)}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      state.child = t.dataset.child;
+      const items = childItems(state.child).filter(i=>i.w===state.week);
+      if(items.length===0){ state.week = firstIncompleteWeek(state.child) ?? WEEKS[0]; }
+      renderAll();
+    });
+  });
+}
+
+function renderOverview(){
+  const ch = CHILDREN.find(c=>c.key===state.child);
+  const items = childItems(state.child);
+  const done = items.filter(i=>state.checked.has(i.id)).length;
+  const p = pct(done, items.length);
+  document.getElementById('overview').innerHTML = `
+    <div class="ring-wrap">${ring(66,8,p,ch.varc)}<div class="ring-label">${p}%</div></div>
+    <div class="overview-txt">Avance total de <b>${state.child}</b><br>
+    ${done} de ${items.length} actividades completadas en el semestre.</div>
+  `;
+}
+
+function firstIncompleteWeek(childKey){
+  for(const w of WEEKS){
+    const items = weekItems(childKey, w);
+    if(items.length===0) continue;
+    if(items.some(i=>!state.checked.has(i.id))) return w;
+  }
+  return null;
+}
+
+function renderWeekStrip(){
+  const el = document.getElementById('weekstrip');
+  const ch = CHILDREN.find(c=>c.key===state.child);
+  let html = '';
+  let prevWeek = null;
+  for(const w of WEEKS){
+    if(prevWeek!==null && w-prevWeek>1){
+      html += `<div class="vac-divider"><div class="ic">🏖️</div>Vacaciones</div>`;
+    }
+    prevWeek = w;
+    const items = weekItems(state.child, w);
+    const done = items.filter(i=>state.checked.has(i.id)).length;
+    const p = pct(done, items.length);
+    const cur = w===state.week ? 'current' : '';
+    html += `<div class="wchip ${cur}" data-week="${w}">
+      <div class="wnum">Sem ${w}</div>
+      <div class="wdate">${items.length?fmtRange(items[0].f1,items[0].f2):''}</div>
+      <div class="wbar"><i style="width:${p}%; background:${ch.varc}"></i></div>
+    </div>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.wchip').forEach(c=>{
+    c.addEventListener('click', ()=>{ state.week = parseInt(c.dataset.week); renderAll(); });
+  });
+  const curEl = el.querySelector('.wchip.current');
+  if(curEl) curEl.scrollIntoView({inline:'center', block:'nearest'});
+}
+
+function renderWeekHead(){
+  const isWeek = state.view==='week';
+  document.getElementById('weekhead').style.display = isWeek ? 'flex' : 'none';
+  document.getElementById('weekstrip').style.display = isWeek ? 'flex' : 'none';
+  document.getElementById('weekprogress').style.display = isWeek ? 'flex' : 'none';
+  if(!isWeek) return;
+
+  const items = weekItems(state.child, state.week);
+  const idx = WEEKS.indexOf(state.week);
+  document.getElementById('weekTitle').innerHTML =
+    `Semana ${state.week} <span style="font-weight:400;color:var(--ink-soft);font-size:14px">· ${items.length?fmtRange(items[0].f1,items[0].f2):''}</span>`;
+  document.getElementById('prevBtn').disabled = idx<=0;
+  document.getElementById('nextBtn').disabled = idx>=WEEKS.length-1;
+
+  const ch = CHILDREN.find(c=>c.key===state.child);
+  const done = items.filter(i=>state.checked.has(i.id)).length;
+  const p = pct(done, items.length);
+  document.getElementById('wpBarFill').style.width = p+'%';
+  document.getElementById('wpBarFill').style.background = ch.varc;
+  document.getElementById('wpLabel').textContent = `${done}/${items.length} · ${p}%`;
+}
+
+function renderViewToggle(){
+  const ch = CHILDREN.find(c=>c.key===state.child);
+  const el = document.getElementById('viewtoggle');
+  el.innerHTML = `
+    <button type="button" class="vtbtn ${state.view==='week'?'active '+ch.color:''}" data-view="week">📅 Por semana</button>
+    <button type="button" class="vtbtn ${state.view==='subject'?'active '+ch.color:''}" data-view="subject">📚 Por asignatura</button>
+  `;
+  el.querySelectorAll('.vtbtn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.view = b.dataset.view;
+      renderAll();
+    });
+  });
+}
+
+function renderContent(){
+  const el = document.getElementById('content');
+  const items = state.view==='subject' ? childItems(state.child) : weekItems(state.child, state.week);
+  if(items.length===0){
+    el.innerHTML = `<div class="empty">No hay actividades esta semana para ${state.child}. 🎉</div>`;
+    return;
+  }
+  const bySubj = {};
+  items.forEach(i=>{ (bySubj[i.s] ||= []).push(i); });
+  el.innerHTML = Object.keys(bySubj).map(s=>{
+    const list = bySubj[s];
+    const style = subjStyle(s);
+    const done = list.filter(i=>state.checked.has(i.id)).length;
+    const p = pct(done, list.length);
+    const rows = list.map(i=>{
+      const on = state.checked.has(i.id);
+      return `<div class="item ${on?'done':''}" data-id="${i.id}">
+        <div class="chk ${on?'on':''}" style="${on?`background:${style.c};border-color:${style.c};`:''}" data-id="${i.id}">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="item-txt" data-id="${i.id}">${i.a}</div>
+        ${i.e?`<div class="eval-badge" style="background:${style.soft};color:${style.c}">Evaluación</div>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="subj-card">
+      <div class="subj-head" style="border-left-color:${style.c}; background:${style.soft}">
+        <div class="subj-dot" style="background:${style.c}"></div>
+        <div class="subj-name">${s}</div>
+        <div class="subj-count">${done}/${list.length}</div>
+      </div>
+      <div class="subj-bar"><i style="width:${p}%; background:${style.c}"></i></div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.item').forEach(node=>{
+    node.addEventListener('click', ()=>{
+      const id = parseInt(node.dataset.id);
+      if(state.checked.has(id)) state.checked.delete(id); else state.checked.add(id);
+      saveProgress();
+      renderAll();
+    });
+  });
+}
+
+function renderAll(){
+  renderTabs();
+  renderOverview();
+  renderViewToggle();
+  renderWeekStrip();
+  renderWeekHead();
+  renderContent();
+}
+
+/* ================= Sincronización de avance ================= */
+
+let syncChild = state.child;
+
+function normalizeName(s){
+  return (s||'')
+    .toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quitar tildes
+    .toLowerCase()
+    .replace(/^\s*\d+[\.\)]\s*/, '')  // quitar numeración inicial "3. " / "3) "
+    .replace(/["'¿?¡!]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function normalizeSubject(s){
+  return normalizeName(s).replace(/semestre\s*\d.*/,'').replace(/\d.*básico.*/,'').trim();
+}
+
+// index: normalized activity name -> array of DATA items (para un child dado)
+function buildNameIndex(childKey){
+  const idx = {};
+  DATA.filter(d=>d.c===childKey).forEach(d=>{
+    const key = normalizeName(d.a);
+    (idx[key] ||= []).push(d);
+  });
+  return idx;
+}
+
+function parseCSVLine(line){
+  // parser simple compatible con comillas y comas
+  const out = []; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){
+      if(inQ && line[i+1]==='"'){ cur+='"'; i++; }
+      else inQ=!inQ;
+    } else if(ch===','&&!inQ){
+      out.push(cur); cur='';
+    } else cur+=ch;
+  }
+  out.push(cur);
+  return out.map(s=>s.trim());
+}
+
+const DONE_WORDS = ['si','sí','yes','true','1','completado','completo','completada','verde','done','ok','terminado','terminada'];
+const PENDING_WORDS = ['no','false','0','pendiente','rojo','pending','incompleto','incompleta'];
+
+function statusToBool(v){
+  const n = normalizeName(v);
+  if(DONE_WORDS.includes(n)) return true;
+  if(PENDING_WORDS.includes(n)) return false;
+  return null; // desconocido
+}
+
+function parseSyncInput(raw){
+  const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  if(lines.length===0) return [];
+
+  // detectar si hay delimitador (coma, punto y coma o tab) en la mayoría de líneas
+  const delim = lines[0].includes('\t') ? '\t' : (lines.filter(l=>l.includes(',')).length > lines.length*0.5 ? ',' : null);
+
+  if(!delim){
+    // modo lista simple: cada línea es una actividad COMPLETADA
+    return lines.map(l=>({ subject:null, name:l, done:true }));
+  }
+
+  const rows = lines.map(l=> delim===',' ? parseCSVLine(l) : l.split(delim).map(s=>s.trim()));
+  // detectar header
+  let start = 0;
+  let colSubj=-1, colName=-1, colStatus=-1;
+  const headerCandidates = rows[0].map(h=>normalizeName(h));
+  const looksLikeHeader = headerCandidates.some(h=>['asignatura','materia','subject','actividad','leccion','nombre','estado','status','completado'].includes(h));
+  if(looksLikeHeader){
+    headerCandidates.forEach((h,i)=>{
+      if(['asignatura','materia','subject'].includes(h)) colSubj=i;
+      if(['actividad','leccion','nombre','clase','titulo'].includes(h)) colName=i;
+      if(['estado','status','completado'].includes(h)) colStatus=i;
+    });
+    start = 1;
+  }
+  if(colName===-1){
+    // asumir: si hay 3 columnas -> [asignatura, nombre, estado]; si hay 2 -> [nombre, estado]; si hay 1 -> [nombre]
+    const ncols = rows[0].length;
+    if(ncols>=3){ colSubj=0; colName=1; colStatus=2; }
+    else if(ncols===2){ colName=0; colStatus=1; }
+    else { colName=0; }
+  }
+
+  const out = [];
+  for(let i=start;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || r.length===0) continue;
+    const name = r[colName];
+    if(!name) continue;
+    const subject = colSubj>=0 ? r[colSubj] : null;
+    const statusRaw = colStatus>=0 ? r[colStatus] : null;
+    const done = statusRaw!==null ? statusToBool(statusRaw) : true; // sin columna de estado => se asume completado
+    if(done===null) continue; // estado no reconocido, se ignora esa fila
+    out.push({ subject, name, done });
+  }
+  return out;
+}
+
+function runSync(raw){
+  const parsed = parseSyncInput(raw);
+  const idx = buildNameIndex(syncChild);
+  let doneCount=0, pendCount=0;
+  const unmatched = [];
+
+  parsed.forEach(row=>{
+    const key = normalizeName(row.name);
+    let candidates = idx[key];
+    if(candidates && candidates.length>1 && row.subject){
+      const subjNorm = normalizeSubject(row.subject);
+      const filtered = candidates.filter(c=>normalizeSubject(c.s).includes(subjNorm) || subjNorm.includes(normalizeSubject(c.s)));
+      if(filtered.length>0) candidates = filtered;
+    }
+    if(!candidates || candidates.length===0){
+      unmatched.push(row.name);
+      return;
+    }
+    candidates.forEach(c=>{
+      if(row.done){ state.checked.add(c.id); doneCount++; }
+      else { state.checked.delete(c.id); pendCount++; }
+    });
+  });
+
+  saveProgress();
+  return { total: parsed.length, doneCount, pendCount, unmatched };
+}
+
+function renderSyncChildSel(){
+  const el = document.getElementById('syncChildSel');
+  el.innerHTML = CHILDREN.map(ch=>{
+    const sel = syncChild===ch.key ? 'sel '+ch.color : '';
+    return `<button type="button" class="${sel}" data-child="${ch.key}">${ch.emoji} ${ch.key}</button>`;
+  }).join('');
+  el.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ syncChild = b.dataset.child; renderSyncChildSel(); });
+  });
+}
+
+function openSyncModal(){
+  syncChild = state.child;
+  renderSyncChildSel();
+  document.getElementById('syncResults').style.display='none';
+  document.getElementById('syncModal').style.display='flex';
+}
+function closeSyncModal(){ document.getElementById('syncModal').style.display='none'; }
+
+document.getElementById('prevBtn').addEventListener('click', ()=>{
+  const idx = WEEKS.indexOf(state.week);
+  if(idx>0){ state.week = WEEKS[idx-1]; renderAll(); }
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  const idx = WEEKS.indexOf(state.week);
+  if(idx<WEEKS.length-1){ state.week = WEEKS[idx+1]; renderAll(); }
+});
+
+document.getElementById('syncOpenBtn').addEventListener('click', openSyncModal);
+document.getElementById('syncCancelBtn').addEventListener('click', closeSyncModal);
+document.getElementById('syncModal').addEventListener('click', (e)=>{
+  if(e.target.id==='syncModal') closeSyncModal();
+});
+document.getElementById('syncFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ document.getElementById('syncTextarea').value = reader.result; };
+  reader.readAsText(file, 'utf-8');
+});
+document.getElementById('syncRunBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('syncTextarea').value;
+  if(!raw.trim()) return;
+  const res = runSync(raw);
+  const box = document.getElementById('syncResults');
+  box.style.display='block';
+  box.innerHTML = `
+    Se leyeron <b>${res.total}</b> filas.<br>
+    ✅ ${res.doneCount} marcadas como completadas.<br>
+    ${res.pendCount? `↩️ ${res.pendCount} marcadas como pendientes.<br>`:''}
+    ${res.unmatched.length? `⚠️ ${res.unmatched.length} sin coincidencia:
+      <div class="unmatched">${res.unmatched.map(u=>'• '+u).join('<br>')}</div>` : '🎉 Todas las filas encontraron su actividad.'}
+  `;
+  renderAll();
+});
+
+(async function init(){
+  await loadProgress();
+  state.week = firstIncompleteWeek(state.child) ?? WEEKS[0];
+  renderAll();
+})();
+</script>
+</body>
+</html>
