@@ -618,6 +618,24 @@ function buildNameIndex(childKey){
   return idx;
 }
 
+// numero inicial "3. Foo" / "3) Foo" -> "3"
+function leadingNum(s){
+  const m = (s||'').toString().trim().match(/^(\d+)[\.\)]/);
+  return m ? m[1] : '';
+}
+// index preciso: asignatura + numero de leccion + nombre -> DATA item(s)
+// evita ambiguedad cuando varias lecciones se llaman igual ("Como voy", "Lectores en accion", ...)
+function buildPreciseIndex(childKey){
+  const idx = {};
+  DATA.filter(d=>d.c===childKey).forEach(d=>{
+    const num = leadingNum(d.a);
+    if(!num) return;
+    const key = normalizeSubject(d.s) + '|' + num + '|' + normalizeName(d.a);
+    (idx[key] ||= []).push(d);
+  });
+  return idx;
+}
+
 function parseCSVLine(line){
   // parser simple compatible con comillas y comas
   const out = []; let cur=''; let inQ=false;
@@ -696,16 +714,27 @@ function parseSyncInput(raw){
 function runSync(raw){
   const parsed = parseSyncInput(raw);
   const idx = buildNameIndex(syncChild);
+  const pidx = buildPreciseIndex(syncChild);
   let doneCount=0, pendCount=0;
   const unmatched = [];
 
   parsed.forEach(row=>{
-    const key = normalizeName(row.name);
-    let candidates = idx[key];
-    if(candidates && candidates.length>1 && row.subject){
-      const subjNorm = normalizeSubject(row.subject);
-      const filtered = candidates.filter(c=>normalizeSubject(c.s).includes(subjNorm) || subjNorm.includes(normalizeSubject(c.s)));
-      if(filtered.length>0) candidates = filtered;
+    let candidates = null;
+    // 1) match preciso: asignatura + numero de leccion + nombre
+    const num = leadingNum(row.name);
+    if(num && row.subject){
+      const pkey = normalizeSubject(row.subject) + '|' + num + '|' + normalizeName(row.name);
+      candidates = pidx[pkey] || null;
+    }
+    // 2) fallback: match por nombre (comportamiento anterior)
+    if(!candidates){
+      const key = normalizeName(row.name);
+      candidates = idx[key];
+      if(candidates && candidates.length>1 && row.subject){
+        const subjNorm = normalizeSubject(row.subject);
+        const filtered = candidates.filter(c=>normalizeSubject(c.s).includes(subjNorm) || subjNorm.includes(normalizeSubject(c.s)));
+        if(filtered.length>0) candidates = filtered;
+      }
     }
     if(!candidates || candidates.length===0){
       unmatched.push(row.name);
