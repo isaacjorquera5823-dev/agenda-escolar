@@ -847,6 +847,15 @@ function showAutoSyncResult(r){
   renderAll();
   if(auto) showAutoSyncResult(auto);
 })();
+
+// Si la agenda ya estaba abierta, el botón solo cambia la dirección (#bschool=...) sin recargar la página.
+window.addEventListener('hashchange', ()=>{
+  const r = autoSyncFromHash();
+  if(!r) return;
+  state.week = firstIncompleteWeek(state.child) ?? WEEKS[0];
+  renderAll();
+  showAutoSyncResult(r);
+});
 </script>
 </body>
 </html>
