@@ -295,6 +295,12 @@
 <div class="modal-backdrop" id="syncModal" style="display:none;">
   <div class="modal">
     <h3>🔄 Sincronizar avance del colegio</h3>
+    <div style="background:#f3f7f2;border:1px solid #cfe3cc;border-radius:10px;padding:10px 12px;margin:8px 0 12px;font-size:14px;line-height:1.45">
+      <b>Forma rápida, desde BSchool:</b> arrastra este botón a tu barra de favoritos (una sola vez):
+      <div style="margin:8px 0"><a href="javascript:(()=>{if(!/lecciones-por-curso/.test(location.pathname)){if(confirm('Voy%20a%20abrir%20Mis%20Clases%20en%20BSchool.%20Cuando%20cargue,%20presiona%20el%20bot%C3%B3n%20otra%20vez.'))location.href='/lecciones-por-curso/';return}const%20t=(document.querySelector('article')||document.body).innerText;const%20g=(t.match(/%5E(.*?),%20has%20completado/m)||[])[1]||'';const%20child=/benjam/i.test(g)?'Benja':/daniel/i.test(g)?'Daniel':null;if(!child){alert('No%20pude%20identificar%20al%20alumno%20en%20esta%20p%C3%A1gina.');return}const%20rows=[];document.querySelectorAll('.accordion-item').forEach(it=>{const%20b=it.querySelector('.accordion-button');if(!b)return;const%20c=b.innerText.trim();if(/semestre%5Cs*1%5Cb/i.test(c))return;it.querySelectorAll('.accordion-collapse%20a').forEach(a=>{if(a.classList.contains('btn-outline-success'))rows.push([c,a.innerText.trim()])})});if(!rows.length){alert('No%20encontr%C3%A9%20actividades%20completadas%20en%20esta%20p%C3%A1gina.');return}const%20p=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,child:child,rows:rows}))));window.open('https://isaacjorquera5823-dev.github.io/agenda-escolar/#bschool='+p,'agenda-escolar')})()" onclick="alert('Este botón se usa desde BSchool: arrástralo a la barra de favoritos y presiónalo estando en Mis Clases.');return false;" style="display:inline-block;background:#1a8754;color:#fff;padding:6px 12px;border-radius:8px;text-decoration:none;font-weight:600">⭐ Actualizar agenda</a></div>
+      Después, entra a BSchool con la cuenta de cada hijo, abre <i>Mis Clases</i> y presiona el favorito. La agenda se abre sola con lo nuevo marcado.
+    </div>
+    <p style="font-size:13px;opacity:.8">Forma manual:</p>
     <p>Pega o sube lo que exportaste de la plataforma (idealmente con columnas <b>Asignatura, Actividad, Estado</b>). También puedes pegar solo una lista de nombres de lecciones ya completadas, una por línea.</p>
 
     <label>¿De quién es este avance?</label>
@@ -649,7 +655,7 @@ function parseSyncInput(raw){
   if(lines.length===0) return [];
 
   // detectar si hay delimitador (coma, punto y coma o tab) en la mayoría de líneas
-  const delim = lines[0].includes('\t') ? '\t' : (lines.filter(l=>l.includes(',')).length > lines.length*0.5 ? ',' : null);
+  const delim = lines[0].includes('\t') ? '\t' : (lines.filter(l=>l.includes(';')).length > lines.length*0.5 ? ';' : (lines.filter(l=>l.includes(',')).length > lines.length*0.5 ? ',' : null));
 
   if(!delim){
     // modo lista simple: cada línea es una actividad COMPLETADA
@@ -777,10 +783,69 @@ document.getElementById('syncRunBtn').addEventListener('click', ()=>{
   renderAll();
 });
 
+// ---- Actualización automática desde BSchool (botón de favoritos) ----
+function bsNorm(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/["'“”‘’¿?¡!]/g,'').replace(/\s+/g,' ').trim(); }
+function bsSubj(s){ return bsNorm(s).split(/[ ,]/)[0]; }
+function bsNum(s){ const m = bsNorm(s).match(/^(\d+)[.)]/); return m ? m[1] : null; }
+function bsSim(a,b){
+  a = bsNorm(a).replace(/[^a-z0-9]/g,''); b = bsNorm(b).replace(/[^a-z0-9]/g,'');
+  if(a===b) return 1; if(a.length<2||b.length<2) return 0;
+  const bg = s=>{ const m=new Map(); for(let i=0;i<s.length-1;i++){ const k=s.slice(i,i+2); m.set(k,(m.get(k)||0)+1);} return m; };
+  const A=bg(a), B=bg(b); let inter=0; A.forEach((v,k)=>{ inter+=Math.min(v,B.get(k)||0); });
+  return 2*inter/((a.length-1)+(b.length-1));
+}
+function bsMatch(child, course, name){
+  const pool = DATA.filter(d=>d.c===child && bsSubj(d.s)===bsSubj(course));
+  let m = pool.filter(d=>bsNorm(d.a)===bsNorm(name));
+  if(m.length===1) return m[0];
+  const n = bsNum(name);
+  m = pool.filter(d=>bsNum(d.a)===n && bsSim(d.a,name)>=0.7);
+  return m.length===1 ? m[0] : null;
+}
+function autoSyncFromHash(){
+  const hm = location.hash.match(/^#bschool=(.+)$/);
+  if(!hm) return null;
+  history.replaceState(null,'',location.pathname+location.search);
+  let p;
+  try{ p = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(hm[1]))))); }
+  catch(e){ return { error:'No se pudo leer el avance enviado desde BSchool.' }; }
+  if(!p || !Array.isArray(p.rows) || !DATA.some(d=>d.c===p.child)) return { error:'El avance recibido no corresponde a ningún alumno de la agenda.' };
+  const nuevos=[]; let ya=0;
+  p.rows.forEach(([course,name])=>{
+    const d = bsMatch(p.child, course, name);
+    if(!d) return;
+    if(state.checked.has(d.id)){ ya++; return; }
+    state.checked.add(d.id); nuevos.push(d);
+  });
+  if(nuevos.length) saveProgress();
+  state.child = p.child;
+  return { child:p.child, nuevos, ya };
+}
+function showAutoSyncResult(r){
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.style.display = 'flex';
+  const esc = s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  let body;
+  if(r.error){ body = `<p>⚠️ ${esc(r.error)}</p>`; }
+  else if(!r.nuevos.length){ body = `<p>✅ La agenda de <b>${esc(r.child)}</b> ya estaba al día. No había actividades nuevas en BSchool.</p>`; }
+  else {
+    body = `<p>✅ Se marcaron <b>${r.nuevos.length}</b> actividades nuevas de <b>${esc(r.child)}</b>.</p>
+      <div class="unmatched" style="max-height:240px;overflow:auto">${r.nuevos.map(d=>'• '+esc(d.s)+': '+esc(d.a)).join('<br>')}</div>
+      <p style="font-size:13px;opacity:.75">${r.ya} ya estaban marcadas.</p>`;
+  }
+  wrap.innerHTML = `<div class="modal"><h3>🔄 Actualizado desde BSchool</h3>${body}<div class="modal-actions"><button class="btn btn-primary">Listo</button></div></div>`;
+  const close = ()=>wrap.remove();
+  wrap.querySelector('button').addEventListener('click', close);
+  wrap.addEventListener('click', e=>{ if(e.target===wrap) close(); });
+  document.body.appendChild(wrap);
+}
+
 (async function init(){
   await loadProgress();
+  const auto = autoSyncFromHash();
   state.week = firstIncompleteWeek(state.child) ?? WEEKS[0];
   renderAll();
+  if(auto) showAutoSyncResult(auto);
 })();
 </script>
 </body>
